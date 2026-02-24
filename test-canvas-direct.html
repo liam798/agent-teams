@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas直接测试</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: sans-serif;
+            background: #1a1a2e;
+            color: white;
+        }
+        #canvas-container {
+            width: 100%;
+            height: 400px;
+            border: 2px solid #6366f1;
+            border-radius: 8px;
+            margin: 20px 0;
+            background: #1a1a2e;
+        }
+        .info {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Canvas直接测试页面</h1>
+    <div class="info">
+        <p>这个页面用于测试Canvas和WebGL是否能正常工作</p>
+        <p>如果这个页面能正常显示3D内容，说明WebGL支持正常</p>
+    </div>
+    
+    <div id="canvas-container"></div>
+    
+    <div id="status" class="info"></div>
+    
+    <script type="module">
+        const statusDiv = document.getElementById('status');
+        
+        function log(message) {
+            console.log(message);
+            statusDiv.innerHTML += '<p>' + message + '</p>';
+        }
+        
+        // 检查WebGL支持
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        
+        if (!gl) {
+            log('❌ WebGL不支持！请使用支持WebGL的浏览器。');
+            document.getElementById('canvas-container').innerHTML = 
+                '<div style="color: red; padding: 20px;">❌ WebGL不支持！请使用支持WebGL的浏览器。</div>';
+        } else {
+            log('✅ WebGL支持正常');
+            log('Vendor: ' + gl.getParameter(gl.VENDOR));
+            log('Renderer: ' + gl.getParameter(gl.RENDERER));
+            log('Version: ' + gl.getParameter(gl.VERSION));
+            
+            // 导入Three.js
+            import('https://cdn.skypack.dev/three@0.182.0').then(THREE => {
+                log('✅ Three.js加载成功 (v' + THREE.REVISION + ')');
+                
+                // 创建场景
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+                const renderer = new THREE.WebGLRenderer({ 
+                    canvas: canvas,
+                    antialias: true,
+                    alpha: false
+                });
+                
+                renderer.setSize(800, 400);
+                renderer.setClearColor(0x1a1a2e, 1);
+                document.getElementById('canvas-container').appendChild(canvas);
+                
+                // 添加测试对象
+                const geometry = new THREE.BoxGeometry(1, 1, 1);
+                const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+                const cube = new THREE.Mesh(geometry, material);
+                scene.add(cube);
+                
+                // 添加网格
+                const gridHelper = new THREE.GridHelper(10, 10, 0x4a5568, 0x2d3748);
+                scene.add(gridHelper);
+                
+                // 添加光源
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+                scene.add(ambientLight);
+                
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+                directionalLight.position.set(5, 5, 5);
+                scene.add(directionalLight);
+                
+                camera.position.z = 5;
+                camera.position.y = 3;
+                camera.lookAt(0, 0, 0);
+                
+                log('✅ 场景创建成功');
+                log('Canvas尺寸: ' + canvas.width + 'x' + canvas.height);
+                
+                // 渲染循环
+                function animate() {
+                    requestAnimationFrame(animate);
+                    cube.rotation.x += 0.01;
+                    cube.rotation.y += 0.01;
+                    renderer.render(scene, camera);
+                }
+                
+                animate();
+                log('✅ 渲染循环启动');
+            }).catch(error => {
+                log('❌ Three.js加载失败: ' + error.message);
+            });
+        }
+    </script>
+</body>
+</html>

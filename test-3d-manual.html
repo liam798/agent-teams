@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D组件测试</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: sans-serif;
+            background: #1a1a1a;
+            color: white;
+        }
+        #test-container {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #6366f1;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .info {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>3D组件手动测试页面</h1>
+    <div class="info">
+        <p>这个页面用于测试Three.js和React Three Fiber是否正确加载</p>
+        <p>打开浏览器控制台查看错误信息</p>
+    </div>
+    
+    <div id="test-container"></div>
+    
+    <script type="module">
+        import * as THREE from 'https://cdn.skypack.dev/three@0.182.0';
+        
+        console.log('Three.js版本:', THREE.REVISION);
+        console.log('WebGL支持:', !!window.WebGLRenderingContext);
+        
+        // 检查WebGL
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (!gl) {
+            document.getElementById('test-container').innerHTML = 
+                '<div style="color: red; padding: 20px;">❌ WebGL不支持！请使用支持WebGL的浏览器。</div>';
+        } else {
+            document.getElementById('test-container').innerHTML = 
+                '<div style="color: green; padding: 20px;">✅ WebGL支持正常</div>';
+            
+            // 简单3D场景测试
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas });
+            renderer.setSize(800, 600);
+            document.getElementById('test-container').appendChild(canvas);
+            
+            const geometry = new THREE.BoxGeometry();
+            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+            const cube = new THREE.Mesh(geometry, material);
+            scene.add(cube);
+            
+            camera.position.z = 5;
+            
+            function animate() {
+                requestAnimationFrame(animate);
+                cube.rotation.x += 0.01;
+                cube.rotation.y += 0.01;
+                renderer.render(scene, camera);
+            }
+            
+            animate();
+            console.log('✅ Three.js场景创建成功');
+        }
+    </script>
+</body>
+</html>
