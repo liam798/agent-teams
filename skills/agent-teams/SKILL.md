@@ -39,12 +39,20 @@ npm install -g agent-teams
 
 检查可用平台：`agent-teams platforms`
 
+## 团队与选队
+
+- **团队描述**：创建团队时用 `--desc "团队职能描述"` 写明该团队的用途（如「PR 安全与性能审查」「用户认证功能开发」）。描述会出现在 `agent-teams list` 和 API/UI 中。
+- **Agent 选队**：使用前先执行 `agent-teams list` 查看现有团队及其描述；根据用户需求**选择职能匹配的团队**。若当前没有合适团队，应**建议用户创建新团队**并给出建议的团队名与 `--desc` 内容。
+
 ## 核心工作流程
 
 ### 1. 创建团队
 ```bash
-agent-teams create <团队名> --member <名称>:<平台> [--member ...]
+agent-teams create <团队名> [--desc "团队职能描述"] --member <名称>:<平台>[:职责描述] [--member ...]
 ```
+- **--desc**：可选，团队职能/用途描述，便于后续根据需求选队
+- **名称:平台**：必填，如 `安全审查:claude`
+- **职责描述**：可选，第三段用冒号分隔，用于在 UI 中展示成员职责、便于任务分配；描述中可含冒号，会整体保留
 
 ### 2. 添加任务
 ```bash
@@ -58,8 +66,8 @@ agent-teams run <团队名> [--cwd <工作目录>]
 
 ### 4. 查看状态
 ```bash
+agent-teams list              # 列出所有团队（含描述，用于选队）
 agent-teams tasks <团队名>    # 查看任务
-agent-teams list              # 列出所有团队
 ```
 
 ## 在 Agent CLI 中使用
@@ -67,6 +75,8 @@ agent-teams list              # 列出所有团队
 安装技能后，在 Agent CLI（Codex/Claude/Gemini）中可以直接用自然语言描述需求。
 
 ### 触发关键词
+
+**选队 / 建队**：先 `agent-teams list` 看现有团队与描述；无合适团队时建议创建并带 `--desc` 写明职能。
 
 **创建团队**：`创建一个 agent team`、`使用 agent-teams`、`协调多个 Agent`、`并行工作`、`多角度审查`
 
@@ -85,14 +95,20 @@ agent-teams list              # 列出所有团队
 
 **代码审查模板**：
 ```
-1. agent-teams create <团队名> --member 安全审查:claude --member 性能审查:codex --member 测试审查:gemini
+1. agent-teams create <团队名> \
+     --member 安全审查:claude:检查认证、授权与输入验证 \
+     --member 性能审查:codex:检查查询与 API 性能 \
+     --member 测试审查:gemini:检查测试覆盖率
 2. agent-teams add-task <团队名> "审查 [目标]" --desc "[详细描述，包含相关文件路径]"
 3. agent-teams run <团队名>
 ```
 
 **并行开发模板**：
 ```
-1. agent-teams create <团队名> --member 前端:claude --member 后端:codex --member 测试:gemini
+1. agent-teams create <团队名> \
+     --member 前端:claude:实现 UI 与交互 \
+     --member 后端:codex:实现 API 与数据层 \
+     --member 测试:gemini:编写测试
 2. TASK1=$(agent-teams add-task <团队名> "设计 API" --desc "..." | grep -o 'task_[a-z0-9]*')
 3. agent-teams add-task <团队名> "实现前端" --desc "..." --dep $TASK1
 4. agent-teams add-task <团队名> "实现后端" --desc "..." --dep $TASK1
@@ -121,10 +137,10 @@ agent-teams list              # 列出所有团队
 
 **Agent 执行**：
 ```bash
-agent-teams create pr-review-team \
-  --member 安全审查:claude \
-  --member 性能审查:codex \
-  --member 测试审查:gemini
+agent-teams create pr-review-team --desc "PR 安全、性能与测试覆盖审查" \
+  --member 安全审查:claude:检查认证、授权与输入验证 \
+  --member 性能审查:codex:检查数据库查询与 API 响应时间 \
+  --member 测试审查:gemini:检查单元测试与集成测试覆盖
 
 agent-teams add-task pr-review-team "审查 PR #142 的安全漏洞" \
   --desc "重点关注认证、授权、输入验证。相关文件：src/auth/, src/middleware/"
@@ -151,9 +167,9 @@ agent-teams run pr-review-team
 **Agent 执行**：
 ```bash
 agent-teams create auth-team \
-  --member 前端:claude \
-  --member 后端:codex \
-  --member 测试:gemini
+  --member 前端:claude:实现登录 UI 与表单 \
+  --member 后端:codex:实现 JWT 认证 API \
+  --member 测试:gemini:编写端到端与集成测试
 
 TASK1=$(agent-teams add-task auth-team "设计 API 规范" \
   --desc "定义登录、注册、登出 API 接口规范" | grep -o 'task_[a-z0-9]*')
@@ -183,6 +199,10 @@ agent-teams run auth-team
 - **Codex**：代码生成、API 实现、性能优化
 - **Gemini**：测试编写、文档生成、数据分析
 
+### 团队与成员描述
+- ✅ 创建团队时建议加上团队描述（`--desc "团队职能"`），便于 Agent 根据需求选择团队；若无合适团队则建议新建并写明 `--desc`
+- ✅ 创建成员时建议加上职责描述（`--member 名称:平台:职责描述`），便于在 UI 中展示和后续按职责分配任务
+
 ### 任务设计
 - ✅ 任务大小适中（1-4小时完成）
 - ✅ 任务描述详细，包含相关文件路径
@@ -202,11 +222,13 @@ agent-teams run auth-team
 
 ## 最佳实践
 
-1. **任务描述要详细**：包含相关文件路径、技术细节、约束条件
-2. **合理设置依赖**：只设置必要的依赖，避免过长依赖链
-3. **定期检查进度**：使用 `agent-teams tasks <团队名>` 监控任务状态
-4. **明确工作范围**：每个队友负责不同的文件或目录，避免冲突
-5. **按职责分配任务**：创建团队时用好成员名称与 `description`，添加任务后由 Agent 或用户根据职责调用 `assignTask` 或指导对应成员认领，避免任务无人认领或错配
+1. **先选队再操作**：先执行 `agent-teams list` 根据团队描述选择匹配需求的团队；没有合适团队时建议用户创建新团队并给出 `--desc` 建议。
+2. **团队描述要明确**：创建团队时用 `--desc "团队职能"` 写清用途，便于后续选队。
+3. **任务描述要详细**：包含相关文件路径、技术细节、约束条件
+4. **合理设置依赖**：只设置必要的依赖，避免过长依赖链
+5. **定期检查进度**：使用 `agent-teams tasks <团队名>` 监控任务状态
+6. **明确工作范围**：每个队友负责不同的文件或目录，避免冲突
+7. **按职责分配任务**：创建团队时用 `--member 名称:平台:职责描述` 写好成员职责，添加任务后由 Agent 或用户根据职责调用 `assignTask` 或指导对应成员认领，避免任务无人认领或错配
 
 ## 错误处理
 
@@ -227,12 +249,13 @@ import {
   getRunningTeammates,
 } from 'agent-teams';
 
-// 创建团队
+// 创建团队（可选团队描述 description、成员职责描述）
 createTeam({
   name: 'dev-team',
+  description: '用户模块与 API 开发',  // 团队职能，便于选队
   members: [
-    { name: '前端', platform: 'claude' },
-    { name: '后端', platform: 'codex' },
+    { name: '前端', platform: 'claude', description: '实现 UI 与交互' },
+    { name: '后端', platform: 'codex', description: '实现 API 与数据层' },
   ],
 });
 

@@ -38,6 +38,17 @@ describe('TeamConfig', () => {
     expect(config.members[0].platform).toBe('claude');
   });
 
+  it('应该支持团队描述', () => {
+    const config = createTeamConfig(
+      teamName,
+      [{ name: '成员1', platform: 'claude' }],
+      'PR 安全与性能审查'
+    );
+    expect(config.description).toBe('PR 安全与性能审查');
+    const loaded = loadTeamConfig(teamName);
+    expect(loaded?.description).toBe('PR 安全与性能审查');
+  });
+
   it('应该加载团队配置', () => {
     createTeamConfig(teamName, [{ name: '成员1', platform: 'claude' }]);
     const loaded = loadTeamConfig(teamName);

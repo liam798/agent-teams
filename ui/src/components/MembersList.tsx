@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Play, Square, Users } from 'lucide-react';
 import { api } from '../api';
-import { useTheme } from '../contexts/ThemeContext';
 import MembersGallery from './MembersGallery';
 
 interface Member {
@@ -17,7 +16,6 @@ interface MembersListProps {
 }
 
 export default function MembersList({ teamName, members }: MembersListProps) {
-  const { is3D } = useTheme();
   const queryClient = useQueryClient();
 
   const { data: membersWithStatus = members } = useQuery({
@@ -43,43 +41,29 @@ export default function MembersList({ teamName, members }: MembersListProps) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-5">
-        <Users size={20} className={is3D ? 'text-purple-400' : 'text-slate-600'} aria-hidden="true" />
-        <h2 className={`text-xl font-semibold leading-tight ${is3D ? 'text-white' : 'text-slate-900'}`}>团队成员</h2>
+        <Users size={20} className="text-slate-600" aria-hidden="true" />
+        <h2 className="text-xl font-semibold leading-tight text-slate-900">团队成员</h2>
       </div>
-      
-      {/* 画廊布局（类似截图的布局） */}
+
       <MembersGallery teamName={teamName} members={membersWithStatus} />
 
-      {/* 列表视图（保留作为备选） */}
-      <div className={`
-        backdrop-blur-sm rounded-xl shadow-md border p-4 transition-all duration-300
-        ${is3D 
-          ? 'card-3d bg-slate-800/80 border-purple-500/30 shadow-purple-500/20' 
-          : 'bg-white/90 border-gray-200'
-        }
-      `}>
+      <div className="backdrop-blur-sm rounded-xl shadow-md border border-gray-200 p-4 transition-all duration-300 bg-white/90">
         <div className="space-y-3">
           {membersWithStatus.length === 0 ? (
-            <div className={`text-center py-8 text-sm leading-relaxed ${is3D ? 'text-purple-300/70' : 'text-slate-400'}`}>
+            <div className="text-center py-8 text-sm leading-relaxed text-slate-400">
               暂无成员
             </div>
           ) : (
             membersWithStatus.map((member: Member) => (
               <div
                 key={member.id}
-                className={`
-                  flex items-center justify-between p-4 rounded-lg border transition-colors duration-200
-                  ${is3D 
-                    ? 'bg-slate-700/50 border-purple-500/30 hover:border-purple-400' 
-                    : 'bg-slate-50 border-gray-200 hover:border-blue-300'
-                  }
-                `}
+                className="flex items-center justify-between p-4 rounded-lg border border-gray-200 bg-slate-50 hover:border-blue-300 transition-colors duration-200"
               >
                 <div className="flex-1 min-w-0">
-                  <div className={`font-medium leading-tight mb-1 ${is3D ? 'text-white' : 'text-slate-900'}`}>
+                  <div className="font-medium leading-tight mb-1 text-slate-900">
                     {member.name}
                   </div>
-                  <div className={`text-sm leading-relaxed ${is3D ? 'text-purple-200' : 'text-slate-600'}`}>
+                  <div className="text-sm leading-relaxed text-slate-600">
                     {member.platform}
                   </div>
                 </div>

@@ -5,6 +5,7 @@ import {
   addTasks,
 } from '../../index.js';
 import { getTasks, updateTaskStatus, claimTask, completeTask } from '../../tasks/TaskList.js';
+import { broadcastTasksUpdated } from '../websocket.js';
 
 const router = Router({ mergeParams: true });
 
@@ -75,6 +76,7 @@ router.put('/:taskId', async (req: Request, res: Response) => {
       // 这里需要实现一个更新任务字段的函数，暂时先更新状态
       if (status) {
         await updateTaskStatus(teamName, taskId, status, assignee);
+        broadcastTasksUpdated(teamName);
       }
       // 重新加载任务
       const updatedTasks = getTasks(teamName);
@@ -84,11 +86,12 @@ router.put('/:taskId', async (req: Request, res: Response) => {
     
     if (status) {
       await updateTaskStatus(teamName, taskId, status, assignee || undefined);
+      broadcastTasksUpdated(teamName);
       const updatedTasks = getTasks(teamName);
       const updatedTask = updatedTasks.find((t) => t.id === taskId);
       return res.json(updatedTask || task);
     }
-    
+
     res.json(task);
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
@@ -106,11 +109,12 @@ router.post('/:taskId/claim', async (req: Request, res: Response) => {
     }
     
     const task = await claimTask(teamName, taskId, memberId);
-    
+
     if (!task) {
       return res.status(400).json({ error: '无法认领任务（可能依赖未完成或已被认领）' });
     }
-    
+
+    broadcastTasksUpdated(teamName);
     res.json(task);
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
@@ -128,11 +132,12 @@ router.post('/:taskId/complete', async (req: Request, res: Response) => {
     }
     
     const task = await completeTask(teamName, taskId);
-    
+
     if (!task) {
       return res.status(400).json({ error: '无法完成任务（可能未被认领）' });
     }
-    
+
+    broadcastTasksUpdated(teamName);
     res.json(task);
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });

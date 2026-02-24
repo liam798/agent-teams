@@ -32,7 +32,7 @@ function usage(): void {
 agent-teams - 协调多平台 AI Agent 协作（Codex / Claude Code / Gemini）
 
 用法:
-  agent-teams create <团队名> [--member 名称:平台]...
+  agent-teams create <团队名> [--desc "团队职能描述"] [--member 名称:平台[:职责描述]]...
   agent-teams add-task <团队名> <任务标题> [--desc 描述] [--dep 任务ID]...
   agent-teams add-tasks <团队名> --file <JSON文件>
   agent-teams tasks <团队名>
@@ -49,8 +49,8 @@ agent-teams - 协调多平台 AI Agent 协作（Codex / Claude Code / Gemini）
   agent-teams skill-path <平台>     显示技能安装路径
 
 选项:
-  --member 名称:平台  添加成员（平台: codex | claude | gemini），可多次
-  --desc 描述         任务描述
+  --member 名称:平台[:职责描述]  添加成员（可带职责描述），可多次
+  --desc 描述         create 时为团队职能描述，add-task 时为任务描述
   --dep 任务ID        任务依赖，可多次
   --file 路径         批量任务 JSON: [{"title":"...","description":"...","dependencies":["id1"]}]
   --cwd 目录          工作目录，默认当前目录
@@ -59,7 +59,7 @@ agent-teams - 协调多平台 AI Agent 协作（Codex / Claude Code / Gemini）
   --host 主机          Web UI 服务器主机，默认 localhost
 
 示例:
-  agent-teams create my-team --member 审查员:claude --member 架构师:codex
+  agent-teams create my-team --member 审查员:claude:安全与代码审查 --member 架构师:codex
   agent-teams members my-team  查看团队成员详情
   agent-teams add-task my-team "审查 auth 模块" --desc "安全与性能"
   agent-teams spawn my-team 审查员 claude "审查 src/auth/ 的安全与性能，并报告发现"
@@ -116,14 +116,26 @@ async function main(): Promise<void> {
           process.exit(1);
         }
         const memberList = members.map((m) => {
-          const [name, platform] = m.split(':');
+          const parts = m.split(':');
+          const name = parts[0]?.trim();
+          const platform = parts[1];
+          const description = parts.length > 2 ? parts.slice(2).join(':').trim() : undefined;
           if (!name || !platform || !PLATFORMS.includes(platform as AgentPlatform)) {
             throw new Error(`无效的成员格式或平台: ${m}，平台可选: ${PLATFORMS.join(', ')}`);
           }
-          return { name: name.trim(), platform: platform as AgentPlatform };
+          return {
+            name,
+            platform: platform as AgentPlatform,
+            ...(description ? { description } : {}),
+          };
         });
-        createTeam({ name: teamName, members: memberList });
-        console.log(`已创建团队: ${teamName}，成员: ${memberList.map((m) => m.name).join(', ')}`);
+        const teamDesc = opts.desc as string | undefined;
+        createTeam({
+          name: teamName,
+          members: memberList,
+          ...(teamDesc ? { description: teamDesc } : {}),
+        });
+        console.log(`已创建团队: ${teamName}，成员: ${memberList.map((m) => m.name).join(', ')}${teamDesc ? ` | 职能: ${teamDesc}` : ''}`);
         break;
       }
 
@@ -235,7 +247,8 @@ async function main(): Promise<void> {
         }
         teams.forEach((name) => {
           const config = loadTeamConfig(name);
-          console.log(`${name} (${config?.members.length ?? 0} 成员)`);
+          const desc = config?.description ? ` - ${config.description}` : '';
+          console.log(`${name} (${config?.members.length ?? 0} 成员)${desc}`);
         });
         break;
       }

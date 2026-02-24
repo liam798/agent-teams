@@ -47,6 +47,8 @@ export interface TeammateMember {
  */
 export interface TeamConfig {
   name: string;
+  /** 团队职能/用途描述，供 Agent 根据需求选择合适团队 */
+  description?: string;
   createdAt: string;
   updatedAt: string;
   members: TeammateMember[];
@@ -72,9 +74,13 @@ export interface MailboxMessage {
  */
 export interface CreateTeamOptions {
   name: string;
+  /** 团队职能/用途描述，便于 Agent 根据需求选择团队 */
+  description?: string;
   members: Array<{
     name: string;
     platform: AgentPlatform;
+    /** 成员职责描述，用于 UI 展示与任务分配参考 */
+    description?: string;
     spawnPrompt?: string;
     platformOptions?: Record<string, unknown>;
   }>;

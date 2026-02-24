@@ -1,41 +1,19 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-
-type ThemeMode = 'light' | '3d';
+import { createContext, useContext, ReactNode } from 'react';
 
 interface ThemeContextType {
-  mode: ThemeMode;
-  toggleMode: () => void;
-  is3D: boolean;
+  mode: 'light';
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const ThemeContext = createContext<ThemeContextType>({ mode: 'light' });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [mode, setMode] = useState<ThemeMode>(() => {
-    const saved = localStorage.getItem('theme-mode');
-    return (saved === '3d' ? '3d' : 'light') as ThemeMode;
-  });
-
-  useEffect(() => {
-    localStorage.setItem('theme-mode', mode);
-    document.documentElement.setAttribute('data-theme', mode);
-  }, [mode]);
-
-  const toggleMode = () => {
-    setMode((prev) => (prev === 'light' ? '3d' : 'light'));
-  };
-
   return (
-    <ThemeContext.Provider value={{ mode, toggleMode, is3D: mode === '3d' }}>
+    <ThemeContext.Provider value={{ mode: 'light' }}>
       {children}
     </ThemeContext.Provider>
   );
 }
 
 export function useTheme() {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within ThemeProvider');
-  }
-  return context;
+  return useContext(ThemeContext);
 }

@@ -10,23 +10,23 @@ interface CreateTeamModalProps {
 
 export default function CreateTeamModal({ isOpen, onClose }: CreateTeamModalProps) {
   const [teamName, setTeamName] = useState('');
+  const [teamDescription, setTeamDescription] = useState('');
   const [members, setMembers] = useState<Array<{ name: string; platform: string }>>([
     { name: '', platform: 'claude' },
   ]);
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: (data: { name: string; members: Array<{ name: string; platform: string }> }) =>
+    mutationFn: (data: { name: string; description?: string; members: Array<{ name: string; platform: string }> }) =>
       api.createTeam(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teams'] });
       onClose();
       setTeamName('');
+      setTeamDescription('');
       setMembers([{ name: '', platform: 'claude' }]);
     },
   });
-
-  if (!isOpen) return null;
 
   const addMember = () => {
     setMembers([...members, { name: '', platform: 'claude' }]);
@@ -46,14 +46,15 @@ export default function CreateTeamModal({ isOpen, onClose }: CreateTeamModalProp
     e.preventDefault();
     const validMembers = members.filter(m => m.name.trim());
     if (!teamName.trim() || validMembers.length === 0) return;
-    
+
     createMutation.mutate({
       name: teamName.trim(),
+      ...(teamDescription.trim() ? { description: teamDescription.trim() } : {}),
       members: validMembers,
     });
   };
 
-  return (
+  return !isOpen ? null : (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
       onClick={onClose}
@@ -92,6 +93,21 @@ export default function CreateTeamModal({ isOpen, onClose }: CreateTeamModalProp
               placeholder="例如: frontend-team"
               required
               aria-required="true"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="team-desc" className="block text-sm font-medium text-slate-900 mb-2">
+              团队职能描述 <span className="text-slate-400 font-normal">（选填，便于选队）</span>
+            </label>
+            <input
+              id="team-desc"
+              type="text"
+              value={teamDescription}
+              onChange={(e) => setTeamDescription(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
+              placeholder="例如: PR 安全与性能审查、用户认证功能开发"
+              aria-label="团队职能描述"
             />
           </div>
 

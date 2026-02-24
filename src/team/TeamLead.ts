@@ -33,7 +33,7 @@ const runningTeammates = new Map<string, SpawnedTeammate>();
  * 创建新团队
  */
 export function createTeam(options: CreateTeamOptions): void {
-  createTeamConfig(options.name, options.members);
+  createTeamConfig(options.name, options.members, options.description);
 }
 
 /**

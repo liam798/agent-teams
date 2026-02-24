@@ -122,6 +122,14 @@ export function broadcastTaskUpdate(teamName: string, task: any): void {
   });
 }
 
+/** 广播任务列表已更新（供路由在完成任务/认领/更新状态后调用，确保 UI 立即刷新） */
+export function broadcastTasksUpdated(teamName: string): void {
+  broadcastToTeam(teamName, {
+    type: 'tasks:updated',
+    team: teamName,
+  });
+}
+
 export function broadcastTeammateStatus(teamName: string, memberId: string, status: string): void {
   broadcastToTeam(teamName, {
     type: 'teammate:status',

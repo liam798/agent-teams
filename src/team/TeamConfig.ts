@@ -34,10 +34,12 @@ export function createTeamConfig(
     description?: string;
     spawnPrompt?: string;
     platformOptions?: Record<string, unknown>;
-  }>
+  }>,
+  teamDescription?: string
 ): TeamConfigType {
   const config: TeamConfigType = {
     name: teamName,
+    ...(teamDescription ? { description: teamDescription } : {}),
     createdAt: now(),
     updatedAt: now(),
     members: members.map((m) => ({

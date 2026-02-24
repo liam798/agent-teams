@@ -29,7 +29,7 @@ export class ErrorBoundary extends Component<Props, State> {
       console.error('[ErrorBoundary] 显示错误UI:', this.state.error);
       return this.props.fallback || (
         <div className="flex flex-col items-center justify-center h-96 rounded-xl bg-red-900/80 border-2 border-red-500 p-6 z-50">
-          <h3 className="text-xl font-bold text-red-200 mb-3">❌ 3D渲染错误</h3>
+          <h3 className="text-xl font-bold text-red-200 mb-3">❌ 渲染错误</h3>
           <p className="text-sm text-red-300 mb-4 font-mono bg-black/50 p-2 rounded">
             {this.state.error?.message || '未知错误'}
           </p>

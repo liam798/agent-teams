@@ -50,58 +50,6 @@
     overflow: hidden;
   }
 
-  /* 3D模式工具类 */
-  .perspective-1000 {
-    perspective: 1000px;
-  }
-
-  .preserve-3d {
-    transform-style: preserve-3d;
-  }
-
-  .transform-3d {
-    transform-style: preserve-3d;
-  }
-
-  .rotate-y-5 {
-    transform: rotateY(5deg);
-  }
-
-  .rotate-y-neg-5 {
-    transform: rotateY(-5deg);
-  }
-
-  .translate-z-10 {
-    transform: translateZ(10px);
-  }
-
-  .translate-z-20 {
-    transform: translateZ(20px);
-  }
-
-  .translate-z-30 {
-    transform: translateZ(30px);
-  }
-}
-
-/* 3D模式全局样式 */
-[data-theme="3d"] {
-  --card-shadow: 0 20px 60px rgba(147, 51, 234, 0.3);
-  --card-shadow-hover: 0 30px 80px rgba(147, 51, 234, 0.5);
-}
-
-[data-theme="3d"] .card-3d {
-  transform-style: preserve-3d;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-[data-theme="3d"] .card-3d:hover {
-  transform: translateY(-8px) rotateX(2deg) rotateY(2deg);
-  box-shadow: var(--card-shadow-hover);
-}
-
-[data-theme="3d"] .card-3d:active {
-  transform: translateY(-4px) rotateX(1deg) rotateY(1deg);
 }
 
 /* 横向滚动条样式（成员选择条等） */

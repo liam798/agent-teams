@@ -29,6 +29,7 @@ router.get('/', (req: Request, res: Response) => {
       
       return {
         name: config.name,
+        description: config.description,
         createdAt: config.createdAt,
         updatedAt: config.updatedAt,
         memberCount: config.members.length,
@@ -46,13 +47,14 @@ router.get('/', (req: Request, res: Response) => {
 // 创建团队
 router.post('/', (req: Request, res: Response) => {
   try {
-    const { name, members } = req.body as CreateTeamOptions;
-    
+    const { name, members, description } = req.body as CreateTeamOptions;
+
     if (!name || !members || !Array.isArray(members)) {
       return res.status(400).json({ error: '缺少必要参数: name, members' });
     }
-    
-    const config = createTeam({ name, members });
+
+    createTeam({ name, members, ...(description ? { description } : {}) });
+    const config = loadTeamConfig(name);
     res.status(201).json(config);
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });

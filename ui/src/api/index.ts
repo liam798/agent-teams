@@ -13,7 +13,7 @@ export const api = {
     return res.json();
   },
 
-  async createTeam(data: { name: string; members: Array<{ name: string; platform: string }> }) {
+  async createTeam(data: { name: string; description?: string; members: Array<{ name: string; platform: string }> }) {
     const res = await fetch(`${API_BASE}/teams`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
