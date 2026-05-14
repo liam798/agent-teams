@@ -15,276 +15,129 @@ metadata:
 
 # Agent Teams
 
-协调多个 AI Agent（Codex、Claude Code、Gemini）作为团队协作，支持共享任务列表与代理间消息传递。参考 [Claude Code Agent Teams 文档](https://code.claude.com/docs/zh-CN/agent-teams)。
+用 `agent-teams` 把多个 Agent 组织成团队：团队配置、任务列表、成员进程和信箱消息都存储在本地，默认目录为 `~/.agent-teams`。
 
-## 何时使用
+安装包提供两个等价命令：`agent-teams` 和短命令 `teams`。常用短操作可用 `teams list`、`teams tasks <团队名>`；资源型命令示例优先写 `agent-teams --json teams list`，避免出现 `teams teams list` 的重复读感。
 
-- **并行探索**：多个队友同时调查问题的不同方面
-- **代码审查**：多个审查者分别关注安全性、性能、测试覆盖等
-- **新功能开发**：队友各自负责独立模块，互不干扰
-- **竞争假设调试**：队友并行测试不同理论，更快收敛到答案
-- **跨层协调**：前端、后端、测试由不同队友负责
+## 开始前
 
-## 前置条件
+先确认命令存在并检查环境：
 
-确保已安装 `agent-teams`：
 ```bash
-npm install -g agent-teams
+command -v teams || command -v agent-teams
+teams --json doctor
 ```
 
-至少安装并配置好一个 Agent 平台的 CLI：
-- **Codex**: `npm install -g @openai/codex`
-- **Claude Code**: 见 [Claude Code 安装](https://code.claude.com/docs)
-- **Gemini**: `npm install -g @google/gemini-cli`
+`doctor` 会报告配置文件、存储目录、包根目录、支持平台和可用平台。本工具本身不需要网络认证；只需要对应 Agent 平台 CLI 已安装并登录或配置。
 
-检查可用平台：`agent-teams platforms`
+如需固定存储目录：
 
-## 团队与选队
-
-- **团队描述**：创建团队时用 `--desc "团队职能描述"` 写明该团队的用途（如「PR 安全与性能审查」「用户认证功能开发」）。描述会出现在 `agent-teams list` 和 API/UI 中。
-- **Agent 选队**：使用前先执行 `agent-teams list` 查看现有团队及其描述；根据用户需求**选择职能匹配的团队**。若当前没有合适团队，应**建议用户创建新团队**并给出建议的团队名与 `--desc` 内容。
-
-## 核心工作流程
-
-### 1. 创建团队
 ```bash
-agent-teams create <团队名> [--desc "团队职能描述"] --member <名称>:<平台>[:职责描述] [--member ...]
+teams init --storage /path/to/.agent-teams
 ```
-- **--desc**：可选，团队职能/用途描述，便于后续根据需求选队
-- **名称:平台**：必填，如 `安全审查:claude`
-- **职责描述**：可选，第三段用冒号分隔，用于在 UI 中展示成员职责、便于任务分配；描述中可含冒号，会整体保留
 
-### 2. 添加任务
+## 选择或创建团队
+
+先发现已有团队，优先复用职能匹配的团队：
+
 ```bash
-agent-teams add-task <团队名> "<任务标题>" [--desc "<描述>"] [--dep <任务ID>]
+agent-teams --json teams list
+agent-teams --json teams resolve review
+agent-teams --json teams get <团队名>
 ```
 
-### 3. 启动队友
+没有合适团队时再创建。创建前可用 `--dry-run` 预览：
+
 ```bash
-agent-teams run <团队名> [--cwd <工作目录>]
-```
-
-### 4. 查看状态
-```bash
-agent-teams list              # 列出所有团队（含描述，用于选队）
-agent-teams tasks <团队名>    # 查看任务
-```
-
-## 在 Agent CLI 中使用
-
-安装技能后，在 Agent CLI（Codex/Claude/Gemini）中可以直接用自然语言描述需求。
-
-### 触发关键词
-
-**选队 / 建队**：先 `agent-teams list` 看现有团队与描述；无合适团队时建议创建并带 `--desc` 写明职能。
-
-**创建团队**：`创建一个 agent team`、`使用 agent-teams`、`协调多个 Agent`、`并行工作`、`多角度审查`
-
-**管理任务**：`添加任务`、`查看任务`、`任务状态`
-
-**启动队友**：`启动团队`、`运行队友`
-
-### 智能场景识别
-
-1. **代码审查**：用户提到"审查"、"review"、"PR" → 创建多个审查者（安全、性能、测试）
-2. **并行开发**：用户提到"并行"、"前端"、"后端" → 创建不同角色的开发者
-3. **调试问题**：用户提到"bug"、"调查"、"假设" → 创建多个调查者测试不同假设
-4. **重构**：用户提到"重构"、"迁移"、"架构" → 创建分阶段执行团队
-
-### 使用模板
-
-**代码审查模板**：
-```
-1. agent-teams create <团队名> \
-     --member 安全审查:claude:检查认证、授权与输入验证 \
-     --member 性能审查:codex:检查查询与 API 性能 \
-     --member 测试审查:gemini:检查测试覆盖率
-2. agent-teams add-task <团队名> "审查 [目标]" --desc "[详细描述，包含相关文件路径]"
-3. agent-teams run <团队名>
-```
-
-**并行开发模板**：
-```
-1. agent-teams create <团队名> \
-     --member 前端:claude:实现 UI 与交互 \
-     --member 后端:codex:实现 API 与数据层 \
-     --member 测试:gemini:编写测试
-2. TASK1=$(agent-teams add-task <团队名> "设计 API" --desc "..." | grep -o 'task_[a-z0-9]*')
-3. agent-teams add-task <团队名> "实现前端" --desc "..." --dep $TASK1
-4. agent-teams add-task <团队名> "实现后端" --desc "..." --dep $TASK1
-5. agent-teams run <团队名>
-```
-
-**调试模板**：
-```
-1. agent-teams create <团队名> --member [假设1]:[平台] --member [假设2]:[平台]
-2. agent-teams add-task <团队名> "[假设1的任务]" --desc "..."
-3. agent-teams add-task <团队名> "[假设2的任务]" --desc "..."
-4. agent-teams run <团队名>
-```
-
-## 完整示例
-
-### 示例 1：审查 PR
-
-**用户说**：
-```
-创建一个 agent team 来审查 PR #142：
-- 安全审查员（claude）- 检查安全漏洞
-- 性能审查员（codex）- 检查性能问题
-- 测试审查员（gemini）- 检查测试覆盖
-```
-
-**Agent 执行**：
-```bash
-agent-teams create pr-review-team --desc "PR 安全、性能与测试覆盖审查" \
+agent-teams --json teams create pr-review --desc "PR 安全、性能与测试覆盖审查" \
   --member 安全审查:claude:检查认证、授权与输入验证 \
-  --member 性能审查:codex:检查数据库查询与 API 响应时间 \
-  --member 测试审查:gemini:检查单元测试与集成测试覆盖
-
-agent-teams add-task pr-review-team "审查 PR #142 的安全漏洞" \
-  --desc "重点关注认证、授权、输入验证。相关文件：src/auth/, src/middleware/"
-
-agent-teams add-task pr-review-team "审查 PR #142 的性能影响" \
-  --desc "检查数据库查询、API 响应时间。相关文件：src/api/, src/models/"
-
-agent-teams add-task pr-review-team "审查 PR #142 的测试覆盖" \
-  --desc "检查单元测试和集成测试覆盖率。相关文件：tests/"
-
-agent-teams run pr-review-team
+  --member 性能审查:codex:检查查询与 API 性能 \
+  --member 测试审查:gemini:检查测试覆盖 \
+  --dry-run
 ```
 
-### 示例 2：并行开发
+确认后去掉 `--dry-run`。
 
-**用户说**：
-```
-实现用户认证功能，创建一个 agent team：
-- 前端开发者（claude）- 实现登录 UI
-- 后端开发者（codex）- 实现认证 API
-- 测试工程师（gemini）- 编写测试
-```
+## 添加和读取任务
 
-**Agent 执行**：
+任务应小而明确，描述中写清文件范围、验收标准和依赖：
+
 ```bash
-agent-teams create auth-team \
-  --member 前端:claude:实现登录 UI 与表单 \
-  --member 后端:codex:实现 JWT 认证 API \
-  --member 测试:gemini:编写端到端与集成测试
+agent-teams --json tasks add <团队名> "审查认证模块安全性" \
+  --desc "范围：src/auth 与 src/middleware；关注认证、授权、输入校验"
 
-TASK1=$(agent-teams add-task auth-team "设计 API 规范" \
-  --desc "定义登录、注册、登出 API 接口规范" | grep -o 'task_[a-z0-9]*')
-
-agent-teams add-task auth-team "实现登录 UI" \
-  --desc "实现登录表单组件，包含用户名、密码输入。相关文件：src/components/LoginForm.tsx" \
-  --dep $TASK1
-
-agent-teams add-task auth-team "实现认证 API" \
-  --desc "实现 JWT token 生成和验证逻辑。相关文件：src/api/auth.ts" \
-  --dep $TASK1
-
-TASK2=$(agent-teams add-task auth-team "实现登录 UI" | grep -o 'task_[a-z0-9]*' || echo "")
-TASK3=$(agent-teams add-task auth-team "实现认证 API" | grep -o 'task_[a-z0-9]*' || echo "")
-
-agent-teams add-task auth-team "编写集成测试" \
-  --desc "编写端到端测试，验证登录流程。相关文件：tests/e2e/auth.test.ts" \
-  --dep $TASK2 --dep $TASK3
-
-agent-teams run auth-team
+agent-teams --json tasks list <团队名> --status pending --limit 20
+agent-teams --json tasks claimable <团队名>
+agent-teams --json tasks get <团队名> <task-id>
 ```
 
-## 关键原则
+批量添加：
 
-### 平台选择
-- **Claude**：代码审查、架构设计、复杂逻辑分析
-- **Codex**：代码生成、API 实现、性能优化
-- **Gemini**：测试编写、文档生成、数据分析
-
-### 团队与成员描述
-- ✅ 创建团队时建议加上团队描述（`--desc "团队职能"`），便于 Agent 根据需求选择团队；若无合适团队则建议新建并写明 `--desc`
-- ✅ 创建成员时建议加上职责描述（`--member 名称:平台:职责描述`），便于在 UI 中展示和后续按职责分配任务
-
-### 任务设计
-- ✅ 任务大小适中（1-4小时完成）
-- ✅ 任务描述详细，包含相关文件路径
-- ✅ 明确任务依赖关系，避免过长依赖链
-
-### 避免冲突
-- ✅ 每个队友负责不同的文件或目录
-- ✅ 明确指定工作范围
-- ✅ 使用任务依赖管理执行顺序
-
-## 任务与成员职责
-
-- **不会自动按职责分配**：系统不会根据 `config.json` 里成员的 `description`（职责描述）自动把任务分给某个成员。任务分配方式只有两种：
-  1. **认领**：运行中的队友通过 `teammateClaimTask` 主动认领可认领任务（满足依赖、未被认领）。
-  2. **负责人指定**：通过 `assignTask(teamName, taskId, assigneeId)` 或 API/UI 将任务指定给某成员。
-- **职责描述的用途**：`description` 仅用于在 Web UI 中展示成员职责，便于人工或 Agent 判断「该把任务分给谁」。使用技能时，应由 **Agent/用户根据成员名称与职责描述，在添加任务后主动分配或指导认领**（例如先分配再 `run`，或在提示中说明由哪位成员负责哪类任务）。
-
-## 最佳实践
-
-1. **先选队再操作**：先执行 `agent-teams list` 根据团队描述选择匹配需求的团队；没有合适团队时建议用户创建新团队并给出 `--desc` 建议。
-2. **团队描述要明确**：创建团队时用 `--desc "团队职能"` 写清用途，便于后续选队。
-3. **任务描述要详细**：包含相关文件路径、技术细节、约束条件
-4. **合理设置依赖**：只设置必要的依赖，避免过长依赖链
-5. **定期检查进度**：使用 `agent-teams tasks <团队名>` 监控任务状态
-6. **明确工作范围**：每个队友负责不同的文件或目录，避免冲突
-7. **按职责分配任务**：创建团队时用 `--member 名称:平台:职责描述` 写好成员职责，添加任务后由 Agent 或用户根据职责调用 `assignTask` 或指导对应成员认领，避免任务无人认领或错配
-
-## 错误处理
-
-**常见问题**：
-1. **命令未找到** → 检查 `agent-teams` 是否安装：`npm install -g agent-teams`
-2. **平台不可用** → 检查平台：`agent-teams platforms`
-3. **任务无法认领** → 检查依赖是否完成、任务是否已被认领
-4. **队友进程异常** → 检查平台可用性、工作目录权限
-
-## 编程使用
-
-```javascript
-import {
-  createTeam,
-  addTask,
-  spawnExistingTeammate,
-  listTasks,
-  getRunningTeammates,
-} from 'agent-teams';
-
-// 创建团队（可选团队描述 description、成员职责描述）
-createTeam({
-  name: 'dev-team',
-  description: '用户模块与 API 开发',  // 团队职能，便于选队
-  members: [
-    { name: '前端', platform: 'claude', description: '实现 UI 与交互' },
-    { name: '后端', platform: 'codex', description: '实现 API 与数据层' },
-  ],
-});
-
-// 添加任务
-const task = await addTask('dev-team', '实现用户模块', {
-  description: 'CRUD + 校验',
-  dependencies: [],
-});
-
-// 启动队友
-const config = loadTeamConfig('dev-team');
-await spawnExistingTeammate('dev-team', config.members[0].id);
-
-// 查看任务
-const tasks = listTasks('dev-team');
+```bash
+agent-teams --json tasks add-batch <团队名> --file tasks.json --dry-run
 ```
 
-## 存储位置
+更新状态前优先预览：
 
-默认存储在 `~/.agent-teams/`：
-- `teams/<团队名>/config.json` - 团队配置
-- `teams/<团队名>/mailbox/` - 代理间消息
-- `tasks/<团队名>/tasks.json` - 任务列表
+```bash
+agent-teams --json tasks set-status <团队名> <task-id> completed --dry-run
+```
 
-自定义存储：`agent-teams --storage /path/to/storage create my-team`
+## 启动和沟通
 
-## 更多信息
+启动团队成员：
 
-- [详细示例](./EXAMPLES.md) - 完整的使用示例和最佳实践
-- [完整文档](../../README.md)
-- [Codex 使用指南](../../docs/CODEX_USAGE.md)
-- [架构文档](../../docs/ARCHITECTURE.md)
+```bash
+teams members run <团队名> --cwd /path/to/project
+```
+
+查看成员与消息：
+
+```bash
+agent-teams --json members list <团队名>
+agent-teams --json messages list <团队名> --limit 20
+```
+
+发送消息默认用 `--dry-run` 预览，确认后再去掉：
+
+```bash
+agent-teams --json messages send <团队名> --from lead --to <member-id> \
+  --body "请优先处理 task_xxx，并只修改 src/auth。" --dry-run
+```
+
+## 安全边界
+
+- 使用 `--json` 供 Codex 解析；人读输出只用于快速查看。
+- 创建、删除、状态更新、发消息、安装 skill 前，优先使用 `--dry-run`。
+- 不要执行 `teams delete`、`messages send`、`tasks set-status` 的真实写入，除非用户明确要求。
+- `request get` 是只读 raw 逃生口，只在高层命令不够用时使用。
+- 不要假设成员会自动按职责分配任务；任务需要成员主动认领，或由负责人通过 API/UI 指定。
+
+## Raw 逃生口
+
+```bash
+agent-teams --json request get /storage
+agent-teams --json request get /platforms
+agent-teams --json request get /teams
+agent-teams --json request get /teams/<团队名>
+agent-teams --json request get /tasks/<团队名>
+agent-teams --json request get /messages/<团队名>
+```
+
+## 常用示例
+
+```bash
+teams --json doctor
+teams list
+teams add-task review-team "审查 PR #142 安全风险" --desc "范围：src/auth, src/api"
+```
+
+```bash
+teams create debug-team --desc "并行验证多个故障假设" \
+  --member 数据库调查:codex:检查连接池与慢查询 \
+  --member 缓存调查:claude:检查缓存失效与一致性
+```
+
+```bash
+teams members run debug-team --cwd /path/to/project
+```
